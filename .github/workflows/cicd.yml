@@ -20,26 +20,32 @@ jobs:
       run: mvn compile
       
   security-check:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: compile
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Trivy Installation
       run: |
         sudo apt-get install -y wget apt-transport-https gnupg lsb-release
         wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
         echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
         sudo apt-get update -y
-        sudo apt-get install trivy -y
+        sudo apt-get install -y trivy
 
     - name: Trivy FS Scan
-      run: trivy fs --format table -o fs-report.json .
+      run: trivy fs --format table -o fs-report.txt .
 
     - name: Gitleaks Installation
-      run: sudo apt install gitleaks -y
+      run: |
+        wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz
+        tar -zxvf gitleaks_8.18.2_linux_x64.tar.gz
+        sudo mv gitleaks /usr/local/bin/
+
     - name: Gitleaks Code Scan
-      run: gitleaks detect source . -r gitleaks-report.json -f json
+      run: gitleaks detect --source . -v -r gitleaks-report.json -f json
+
       
 
     
